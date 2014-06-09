@@ -30,10 +30,10 @@ function TranslatorBot(screenName) {
           translator.translate(tweet.text, 'es', function(err, translation) {
             var translation_text = translation.translatedText;
 
-            var statuses = composeStatuses(translation_text).reverse();
+            var statuses = this.composeStatuses(translation_text).reverse();
             for(status in statuses)
               setTimeout(function(){
-                reply(tweetId, statuses.pop());
+                this.reply(tweetId, statuses.pop());
               }, 3000*status);
 
             console.log('');
@@ -68,7 +68,7 @@ function TranslatorBot(screenName) {
       return [];
     else {
       var textArray = text.split(' ').reverse();
-      var newStatus = '.'.concat(subject());
+      var newStatus = '.'.concat(this.subject());
 
       while(newStatus.length < 139 && textArray.length > 0)
         newStatus = newStatus.concat(' ', textArray.pop());

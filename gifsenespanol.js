@@ -8,26 +8,26 @@ var Twit = require('twit'),
     config = require('./config');
 
 function TranslatorBot(screenName) {
-  this.screenName = screenName;
-  this.userId = null;
-  this.stream = null;
-  this.translator = GoogleTranslate(process.env.GOOGLE_TRANSLATE_API_KEY);
-  this.twit = new Twit(config);
+  var screenName = screenName;
+  var userId = null;
+  var stream = null;
+  var translator = GoogleTranslate(process.env.GOOGLE_TRANSLATE_API_KEY);
+  var twit = new Twit(config);
 
   this.start = function() {
-    this.twit.get('users/lookup', { screen_name: this.screenName }, function(err, data){
-      this.userId = data[0].id;
-      console.log('Found user @'+this.screenName+" with id: "+this.userId.toString());
-      this.translator.translate('Se inicializa API de traducción.', 'en', function(err, translation) {
+    twit.get('users/lookup', { screen_name: screenName }, function(err, data){
+      userId = data[0].id;
+      console.log('Found user @'+screenName+" with id: "+userId.toString());
+      translator.translate('Se inicializa API de traducción.', 'en', function(err, translation) {
         console.log(translation.translatedText);
-        this.stream = this.twit.stream('statuses/filter', { follow: [this.userId] });
-        this.stream.on('tweet', function (tweet) {
+        stream = twit.stream('statuses/filter', { follow: [userId] });
+        stream.on('tweet', function (tweet) {
           var tweetId = tweet.id_str;
 
           console.log(tweet);
           console.log('');
 
-          this.translator.translate(tweet.text, 'es', function(err, translation) {
+          translator.translate(tweet.text, 'es', function(err, translation) {
             var translation_text = translation.translatedText;
 
             var statuses = composeStatuses(translation_text).reverse();
@@ -84,7 +84,7 @@ function TranslatorBot(screenName) {
 
 (function(){
   var translatorBot = new TranslatorBot('gifsinwords');
-  translatorBot.start();
+  setTimeout(translatorBot.start, 1000);
 })();
 
 //var Twit = require('twit')

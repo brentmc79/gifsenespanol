@@ -14,68 +14,73 @@ function TranslatorBot(screenName) {
   var translator = GoogleTranslate(process.env.GOOGLE_TRANSLATE_API_KEY);
   var twit = new Twit(config);
 
-  function _subject() {
-    return '@'.concat(subject_sn);
+  function subject() {
+    return '@'.concat(screenName);
   }
 
-  function _reply(tweetId, text) {
-    console.log('About to tweet: "'+text+'"');
-    console.log('In reply to tweet id: '+tweetId);
+  function postStatus(tweetId, text) {
+    log('About to tweet: "'+text+'"');
+    log('In reply to tweet id: '+tweetId);
 
     twit.post('statuses/update', {status: text, in_reply_to_status_id: tweetId}, function(err, data, resp) {
       if(err != null)
-        console.log('err: '+err.toString());
+        log('err: '+err.toString());
       else {
-        console.log('');
-        console.log('Status successfully posted: '+data.id);
-        console.log(data);
+        log('Status successfully posted: '+data.id);
       }
     });
   }
 
-  function _composeStatuses(text){
+  function composeStatuses(text){
     if(text.length < 1)
       return [];
     else {
       var textArray = text.split(' ').reverse();
-      var newStatus = '.'.concat(_subject());
+      var newStatus = '.'.concat(subject());
 
       while(newStatus.length < 139 && textArray.length > 0)
         newStatus = newStatus.concat(' ', textArray.pop());
 
       var remainingText = textArray.reverse().join(' ');
-      var statuses = _composeStatuses(remainingText);
+      var statuses = composeStatuses(remainingText);
       statuses.reverse().push(newStatus);
       return statuses.reverse();
     }
   }
 
+  function reply(tweet){
+    var tweetId = tweet.id_str;
+
+    log('');
+    log('New tweet: '+tweet.text);
+
+    translator.translate(tweet.text, 'es', function(err, translation) {
+      var translation_text = translation.translatedText;
+
+      var statuses = composeStatuses(translation_text).reverse();
+      for(status in statuses)
+        setTimeout(function(){
+          postStatus(tweetId, statuses.pop());
+        }, 3000*status);
+
+    });
+  }
+
+  function log(text) {
+    var date = new Date();
+    console.log(['[',date.toString(), ']: ', text].join(''));
+    date = null;
+  }
+
   this.start = function() {
     twit.get('users/lookup', { screen_name: screenName }, function(err, data){
       userId = data[0].id;
-      console.log('Found user @'+screenName+" with id: "+userId.toString());
+      log('Found user @'+screenName+" with id: "+userId.toString());
       translator.translate('Se inicializa API de traducción.', 'en', function(err, translation) {
-        console.log(translation.translatedText);
+        log(translation.translatedText);
         stream = twit.stream('statuses/filter', { follow: [userId] });
-        stream.on('tweet', function (tweet) {
-          var tweetId = tweet.id_str;
-
-          console.log(tweet);
-          console.log('');
-
-          translator.translate(tweet.text, 'es', function(err, translation) {
-            var translation_text = translation.translatedText;
-
-            var statuses = this.composeStatuses(translation_text).reverse();
-            for(status in statuses)
-              setTimeout(function(){
-                _reply(tweetId, statuses.pop());
-              }, 3000*status);
-
-            console.log('');
-          });
-        });
-        console.log('GIFs En Espanol: RUNNING.');
+        stream.on('tweet', reply)
+        log('GIFs En Espanol: RUNNING.');
       });
     });
   }
@@ -83,6 +88,6 @@ function TranslatorBot(screenName) {
 }
 
 (function(){
-  var translatorBot = new TranslatorBot('gifsinwords');
+  var translatorBot = new TranslatorBot('brentmc79');
   setTimeout(translatorBot.start, 1000);
 })();

@@ -7,16 +7,12 @@ var Twit = require('twit'),
     GoogleTranslate = require('google-translate'),
     config = require('./config');
 
-function TranslatorBot(screenName) {
-  var screenName = screenName;
+function TranslatorBot() {
+  var screenName = null;
   var userId = null;
   var stream = null;
   var translator = GoogleTranslate(process.env.GOOGLE_TRANSLATE_API_KEY);
   var twit = new Twit(config);
-
-  function subject() {
-    return '@'.concat(screenName);
-  }
 
   function postStatus(tweetId, text) {
     log('About to tweet: "'+text+'"');
@@ -36,7 +32,7 @@ function TranslatorBot(screenName) {
       return [];
     else {
       var textArray = text.split(' ').reverse();
-      var newStatus = '.'.concat(subject());
+      var newStatus = ['.@', screenName].join('');
 
       while(newStatus.length < 139 && textArray.length > 0)
         newStatus = newStatus.concat(' ', textArray.pop());
@@ -49,10 +45,8 @@ function TranslatorBot(screenName) {
   }
 
   function reply(tweet){
+    screenName = tweet.user.screen_name;
     var tweetId = tweet.id_str;
-
-    log('');
-    log('New tweet: '+tweet.text);
 
     translator.translate(tweet.text, 'es', function(err, translation) {
       var translation_text = translation.translatedText;
@@ -72,22 +66,32 @@ function TranslatorBot(screenName) {
     date = null;
   }
 
-  this.start = function() {
+  this.start = function(sn) {
+    screenName = sn;
     twit.get('users/lookup', { screen_name: screenName }, function(err, data){
       userId = data[0].id;
       log('Found user @'+screenName+" with id: "+userId.toString());
       translator.translate('Se inicializa API de traducción.', 'en', function(err, translation) {
         log(translation.translatedText);
         stream = twit.stream('statuses/filter', { follow: [userId] });
-        stream.on('tweet', reply)
+        stream.on('tweet', function(tweet){
+          log('');
+          log('New tweet: '+tweet.text);
+          reply(tweet);
+        });
+
         log('GIFs En Espanol: RUNNING.');
       });
     });
   }
 
+  this.post = function(tweetId) {
+    twit.get('statuses/show', { id: tweetId },  function (err, tweet, response) {
+      log('Status found.');
+      reply(tweet)
+    })
+  }
+
 }
 
-(function(){
-  var translatorBot = new TranslatorBot('gifsinwords');
-  setTimeout(translatorBot.start, 1000);
-})();
+module.exports.TranslatorBot = TranslatorBot;

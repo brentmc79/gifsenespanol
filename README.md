@@ -19,6 +19,10 @@ Make sure you have ENV var set up for the following:
 - TWITTER_ACCESS_TOKEN_SECRET
 - GOOGLE_TRANSLATE_API_KEY
 
-Make sure you have Node installed, then run:
+To follow an account and post translated replies, run:
 
-    node gifsenespanol.js
+    node bin/start.js "gifsinwords"
+
+To reply to a single status, run:
+
+    node bin/reply.js 1234    //where 1234 is a status id

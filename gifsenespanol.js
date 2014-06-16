@@ -88,6 +88,6 @@ function TranslatorBot(screenName) {
 }
 
 (function(){
-  var translatorBot = new TranslatorBot('brentmc79');
+  var translatorBot = new TranslatorBot('gifsinwords');
   setTimeout(translatorBot.start, 1000);
 })();

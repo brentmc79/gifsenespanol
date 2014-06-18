@@ -127,8 +127,12 @@ function TranslatorBot() {
         stream = twit.stream('statuses/filter', { follow: [userId] });
         stream.on('tweet', function(tweet){
           log('');
-          log('New tweet: '+tweet);
-          reply(tweet);
+          log('New tweet: '+tweet.text);
+          if(tweet.retweeted_status == null)
+            console.log(tweet);
+            reply(tweet);
+          else
+            log("Ignoring retweet");
         });
 
         log('GIFs En Espanol: RUNNING.');

@@ -128,10 +128,10 @@ function TranslatorBot() {
         stream.on('tweet', function(tweet){
           log('');
           log('New tweet: '+tweet.text);
-          if(tweet.retweeted_status == null)
+          if(tweet.retweeted_status == null){
             console.log(tweet);
             reply(tweet);
-          else
+          }else
             log("Ignoring retweet");
         });
 

@@ -54,6 +54,28 @@ function TranslatorBot() {
     }
   }
 
+  function extractMentions(text){
+    var matches = text.match(/(\.?@[A-Za-z0-9_]+)/g);
+    var key = null;
+    var subs = {};
+    for(var i=0; i<matches.length; i++){
+      key = ['mention', i.toString()].join('');
+      subs[key] = matches[i];
+      text = text.replace(matches[i], key);
+    }
+    return [text, subs];
+  }
+
+  function replaceMentions(text, map){
+    var key = null;
+    var keys = Object.keys(map);
+    for(var i=0; i<keys.length; i++){
+      key = keys[i];
+      text = text.replace(key, map[key]);
+    }
+    return text;
+  }
+
   function reply(tweet){
     screenName = tweet.user.screen_name;
     var tweetId = tweet.id_str;
@@ -73,16 +95,13 @@ function TranslatorBot() {
         subtext = [subtext, word].join(' ');
     }
 
-    var matches = subtext.match(/(\.?@[A-Za-z0-9_]+)/g)
-    vak key
-    for(var i=0; i<matches.length, i++){
-      key = 'mantion'+i.toString()
-      subs[key] = matches[i];
-      subtext = subtext.replace(matches[i], key);
-    }
+    var res = extractMentions(subtext);
+    subtext = res[0];
+    var mentionMap = res[1];
 
     translator.translate(subtext, 'es', function(err, translation) {
       var fullText = [usernames, translation.translatedText].join(' ');
+      fullText = replaceMentions(fullText, mentionMap);
       var statuses = composeStatuses(usernames, fullText).reverse();
       for(status in statuses)
         setTimeout(function(){

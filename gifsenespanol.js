@@ -27,18 +27,28 @@ function TranslatorBot() {
     });
   }
 
-  function composeStatuses(text){
+  function composeStatuses(recipients, text){
     if(text.length < 1)
       return [];
     else {
       var textArray = text.split(' ').reverse();
-      var newStatus = ['.@', screenName].join('');
+      var replyTo = ['@', screenName].join('');
+      var newStatus = ['.', replyTo].join('');
+      var recipientArray = recipients.split(' ');
 
-      while(newStatus.length < 139 && textArray.length > 0)
-        newStatus = newStatus.concat(' ', textArray.pop());
+      if(recipientArray.indexOf(replyTo) == -1)
+        newStatus = [newStatus, recipients].join(' ');
+      else {
+        recipientArray.splice(recipientArray.indexOf(replyTo), 1)
+        recipients = recipientArray.join(' ')
+        newStatus = [newStatus, recipients].join(' ');
+      }
+
+      while(textArray.length > 0 && (newStatus.length + textArray[textArray.length-1].length) < 139)
+        newStatus = [newStatus, textArray.pop()].join(' ');
 
       var remainingText = textArray.reverse().join(' ');
-      var statuses = composeStatuses(remainingText);
+      var statuses = composeStatuses(recipients, remainingText);
       statuses.reverse().push(newStatus);
       return statuses.reverse();
     }
@@ -47,11 +57,33 @@ function TranslatorBot() {
   function reply(tweet){
     screenName = tweet.user.screen_name;
     var tweetId = tweet.id_str;
+    var words = tweet.text.split(' ');
+    var usernames = '';
+    var subtext = '';
+    var foundAllRecipients = false;
 
-    translator.translate(tweet.text, 'es', function(err, translation) {
-      var translation_text = translation.translatedText;
+    for(var i=0; i<words.length; i++){
+      var word = words[i];
+      if(word.indexOf('.') == 0 && !foundAllRecipients)
+        usernames = [usernames, word.substring(1)].join(' ');
+      else if(word.indexOf('@') == 0 && !foundAllRecipients)
+        usernames = [usernames, word].join(' ');
+      else
+        foundAllRecipients = true;
+        subtext = [subtext, word].join(' ');
+    }
 
-      var statuses = composeStatuses(translation_text).reverse();
+    var matches = subtext.match(/(\.?@[A-Za-z0-9_]+)/g)
+    vak key
+    for(var i=0; i<matches.length, i++){
+      key = 'mantion'+i.toString()
+      subs[key] = matches[i];
+      subtext = subtext.replace(matches[i], key);
+    }
+
+    translator.translate(subtext, 'es', function(err, translation) {
+      var fullText = [usernames, translation.translatedText].join(' ');
+      var statuses = composeStatuses(usernames, fullText).reverse();
       for(status in statuses)
         setTimeout(function(){
           postStatus(tweetId, statuses.pop());
@@ -76,7 +108,7 @@ function TranslatorBot() {
         stream = twit.stream('statuses/filter', { follow: [userId] });
         stream.on('tweet', function(tweet){
           log('');
-          log('New tweet: '+tweet.text);
+          log('New tweet: '+tweet);
           reply(tweet);
         });
 

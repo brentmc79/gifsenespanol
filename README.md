@@ -9,6 +9,12 @@ The bot listens for tweets from @gifsinwords, and replies
 back to them with Spanish translations, for no particular
 reason other that it was something fun to do.
 
+The bot ignores retweets.
+
+The bot *should* preserve all user mentions, extracting
+them out prior to translation, then replacing them once
+the translation is complete.
+
 ##Setup
 
 Make sure you have ENV var set up for the following:
